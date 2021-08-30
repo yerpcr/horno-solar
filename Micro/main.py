@@ -1,14 +1,20 @@
 import network
 from machine import Timer,ADC, Pin
 from umqtt.simple import MQTTClient
+from time import sleep_ms
 import ubinascii
 dato =['a','b','c']
 analogo = ADC(0)
 TOPIC = "prueba"
-led = Pin(2,Pin.OUT)
+led_interno = Pin(2,Pin.OUT)
+transistor = Pin(14,Pin.OUT)
+led_rojo = Pin(0,Pin.OUT)
+led_blanco = Pin(12,Pin.OUT)
+
+led_rojo.value(0)
+transistor.value(1)
 temp = Timer(-1)
-bandera=0
-led.value(1)
+led_interno.value(0)
 def conectar ():
 	global dato
 	archivo = open('wifi.txt','r')
@@ -27,26 +33,30 @@ def enviar():
 	pass
 
 def funcion(t):
-	led.off()
+	led_rojo.value(1)
 
 conectar()
+led_interno.value(1)
 CLIENT_ID = ubinascii.hexlify(machine.unique_id())
-cliente = MQTTClient(CLIENT_ID, dato[2])
+cliente = MQTTClient(client_id=CLIENT_ID, server=dato[2],keepalive=1)
 cliente.set_callback(enviar) ##Define una funcion que se activa cada interaccion 
 cliente.connect()
 cliente.subscribe(TOPIC)
 print("Connected to server %s, subscribed to topic: %s" % (dato[2], TOPIC))
 print("Configurando temporizador")
-temp.init(mode=Timer.PERIODIC,period=2000,callback=funcion)
+temp.init(mode=Timer.PERIODIC,period=5000,callback=funcion)
 print("Listo")
-try:
-	while 1:
-		# micropython.mem_info()
-		if (led.value()==0):
+while (1):
+	if (led_rojo.value()==1):
+		try:
+			transistor.value(0)
+			sleep_ms(1)
 			entrada = analogo.read()
 			print(entrada)
+			transistor.value(1)
 			cliente.publish(topic=TOPIC,msg=str(entrada))
-			bandera = 0;
-			led.on()
-finally:
-	cliente.disconnect()
+			led_rojo.value(0)
+		except:
+			led_blanco.value(1)
+			cliente.connect()
+			led_blanco.value(0)
