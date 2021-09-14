@@ -6,6 +6,7 @@ import paho.mqtt.client as mqtt
 broker = "192.168.0.22"
 equipo = "Dell"
 tema = "prueba"
+resistencia = 1.1
 class MyWidget(QtWidgets.QWidget): #Crea la aplicacion con base a la ventana inicial
     def __init__(self):
         super().__init__()
@@ -26,12 +27,16 @@ class MyWidget(QtWidgets.QWidget): #Crea la aplicacion con base a la ventana ini
     def actualizacion(self,client, userdata, message):
     	dato = str(message.payload.decode("utf-8"))
     	valor_v = float(dato)/1.023
-    	valor_i = valor_v/1.1
+    	valor_i = valor_v/resistencia
     	valor_p = valor_v*valor_i
     	print("Dato: ",dato)
     	self.text_v.setText( "Volatje: {0:.3f} mV".format(valor_v))
     	self.text_i.setText( "Corriente: {0:.3f} mA".format(valor_i))
     	self.text_p.setText( "Potencia: {0:.3f} uP".format(valor_p))
+    def cambio_r(self):
+        resitencia =1.1
+        self.text_r.setText( "Resistencia: {}omhs".format(resistencia))
+
 
 
 if __name__ == "__main__":
